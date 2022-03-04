@@ -1,3 +1,7 @@
+'I like to save anime screenshots from Futaba Channel to make memes later,
+'so I made a macro that downloads all images and video (png, jpg, gif, webm, mp4) in a thread.
+'The user needs to enter a URL and specify a destination folder.
+
 Sub Download_2chan_Image()
 
     Dim fso As Object
