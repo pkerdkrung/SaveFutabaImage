@@ -1,91 +1,91 @@
 'I like to save anime screenshots from Futaba Channel to make memes later,
 'so I made a macro that downloads all images and video (png, jpg, gif, webm, mp4) in a thread.
 'The user needs to enter a URL and specify a destination folder.
-
+Option Explicit
 Sub Download_2chan_Image()
+	Dim objFSO As Object
+	Dim objIE As Object
+	Dim strURL As String
+	Dim strSavePath As String
+	Dim intImgCount As Integer
+	Dim objAtags As Object
+	Dim objAtag As Object
+	Dim strImageUrl As String
+	Dim strImagename As String
+	Dim objElement As Object
+	Dim objCollection As Object
+	
+	'Create FSO Object
+	Set objFSO = CreateObject("Scripting.FileSystemObject")
+	
+	'Create InternetExplorer Object
+  Set objIE = CreateObject("InternetExplorer.Application")
+    
+  'Set IE.Visible = True to make IE visible, or False for IE to run in the background
+  objIE.Visible = False
+    
+  'Ask the user to input 2chan thread Url. If the user enter nothing, exit the sub
+  strURL = ""
+  strURL = Application.InputBox(prompt:="Please enter Url", Type:=2)
+  If strURL = "" Then
+  	MsgBox "No Url. Program will terminate."
+    Exit Sub
+  End If
+    
+  'Pop up the folder-selection box to get the folder form the user:
+  strSavePath = GetFolder()
+  
+	' If the user didn't select anything, you can't save, so tell them so:
+  If strSavePath = "" Then
+  	MsgBox "No folder was selected. Program will terminate."
+    Exit Sub
+  End If
 
-    Dim fso As Object
-    Dim IE As Object
-    Dim URL As String
-    Dim SavePath As String
-    Dim ImgCount As Integer
-    Dim atags As Object
-    Dim atag As Object
-    Dim ImageUrl As String
-    Dim Imagename As String
-    
-    Dim objElement As Object
-    Dim objCollection As Object
-    
-    'Create FSO Object
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    
-    'Create InternetExplorer Object
-    Set IE = CreateObject("InternetExplorer.Application")
-    
-    'Set IE.Visible = True to make IE visible, or False for IE to run in the background
-    IE.Visible = False
-    
-    'Ask the user to input 2chan thread Url. If the user enter nothing, exit the sub
-    URL = Application.InputBox(prompt:="Please enter Url", Type:=2)
-    If URL = "" Then
-        MsgBox "No Url. Program will terminate."
-        Exit Sub
-    End If
-    
-    'Pop up the folder-selection box to get the folder form the user:
-    SavePath = GetFolder()
-    ' If the user didn't select anything, you can't save, so tell them so:
-    If SavePath = "" Then
-        MsgBox "No folder was selected. Program will terminate."
-        Exit Sub
-    End If
+  'Minimize the Excel window while the code runs
+  ActiveWindow.WindowState = xlMinimized
 
-    'Minimize the Excel window while the code runs
-    ActiveWindow.WindowState = xlMinimized
+  'Navigate to URL
+  objIE.navigate strURL
+    
+  ' Statusbar let's user know website is loading
+  Application.StatusBar = strURL & " is loading. Please wait..."
+    
+  ' Wait while IE loading...
+  'IE ReadyState = 4 signifies the webpage has loaded (the first loop is set to avoid inadvertently skipping over the second loop)
+  Do While objIE.readyState = 4: DoEvents: Loop   'Do While
+  Do Until objIE.readyState = 4: DoEvents: Loop   'Do Until
+    
+  'Webpage Loaded
+  Application.StatusBar = strURL & " Loaded"
 
-    'Navigate to URL
-    IE.navigate URL
-    
-    ' Statusbar let's user know website is loading
-    Application.StatusBar = URL & " is loading. Please wait..."
-    
-    ' Wait while IE loading...
-    'IE ReadyState = 4 signifies the webpage has loaded (the first loop is set to avoid inadvertently skipping over the second loop)
-    Do While IE.readyState = 4: DoEvents: Loop   'Do While
-    Do Until IE.readyState = 4: DoEvents: Loop   'Do Until
-    
-    'Webpage Loaded
-    Application.StatusBar = URL & " Loaded"
-
-    'Loop through each html with TagName "a". Keep count for each image downloaded.
-    Set atags = IE.document.getElementsByTagName("a")
-    ImgCount = 0
-    For Each atag In atags
-      ImageUrl = atag.href
-      Imagename = fso.GetFileName(ImageUrl)
+  'Loop through each html with TagName "a". Keep count for each image downloaded.
+  Set objAtags = objIE.document.getElementsByTagName("a")
+  intImgCount = 0
+  For Each objAtag In objAtags
+  	strImageUrl = objAtag.href
+    strImagename = objFSO.GetFileName(ImageUrl)
+    On Error Resume Next
+    If strImagename Like "*.png" Or strImagename Like "*.jpg" Or strImagename Like "*.gif" Or strImagename Like "*.webm" Or strImagename Like "*.mp4" Then
+    	intImgCount = intImgCount + 1
+      Application.StatusBar = "Downloading. Total " & intImgCount & " files downloaded..."
+      Call DownloadFileFromURL(strImageUrl, strSavePath, strImagename)
       On Error Resume Next
-      If Imagename Like "*.png" Or Imagename Like "*.jpg" Or Imagename Like "*.gif" Or Imagename Like "*.webm" Or Imagename Like "*.mp4" Then
-        ImgCount = ImgCount + 1
-        Application.StatusBar = "Downloading. Total " & ImgCount & " files downloaded..."
-        Call DownloadFileFromURL(ImageUrl, SavePath, Imagename)
-        On Error Resume Next
-      End If
-    Next atag
+    End If
+  Next objAtag
     
-    'Unload IE
-    Set IE = Nothing
-    Set objElement = Nothing
-    Set objCollection = Nothing
+  'Unload IE
+  Set objIE = Nothing
+  Set objElement = Nothing
+  Set objCollection = Nothing
     
-    'Maximize the Excel window and alert the user
-    ActiveWindow.WindowState = xlMaximized
-    MsgBox "Download Completed. Total " & ImgCount & " files downloaded."
+  'Maximize the Excel window and alert the user
+  ActiveWindow.WindowState = xlMaximized
+  MsgBox "Download Completed. Total " & intImgCount & " files downloaded."
     
 End Sub
 
-'A Sub to download a file from the internet given Url, SavePath, and Filename.
-Sub DownloadFileFromURL(varImageUrl, varSavePath As String, varImagename As String)
+'A helper routine to download a file from the internet given Url, SavePath, and Filename.
+     Sub DownloadFileFromURL(varImageUrl As String, varSavePath As String, varImagename As String)
 
      Dim FileUrl As String
      Dim objXmlHttpReq As Object
