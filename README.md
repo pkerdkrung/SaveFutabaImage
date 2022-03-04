@@ -1,2 +1,3 @@
 # ExcelVBA
-Personal collection of VBA macros
+My personal collection of VBA macros
+You can just copy the output into your modules.
